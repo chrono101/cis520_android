@@ -288,7 +288,7 @@ public class AccelerometerPlayActivity extends Activity {
                             // Check for collisions
                             if (dd <= sBallDiameter2) {
                                 /*
-                                 * add a little bit of entropy, after nothing is
+                                 * add a little bit of entropy, after all nothing is
                                  * perfect in the universe.
                                  */
                                 dx += ((float) Math.random() - 0.5f) * 0.0001f;
