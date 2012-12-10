@@ -16,12 +16,16 @@
 
 package com.example.android.accelerometerplay;
 
+import android.R.string;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.BitmapFactory.Options;
+import android.graphics.drawable.ShapeDrawable;
+import android.graphics.drawable.shapes.OvalShape;
+import android.graphics.drawable.shapes.RectShape;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -34,7 +38,7 @@ import android.view.Display;
 import android.view.Surface;
 import android.view.View;
 import android.view.WindowManager;
-
+import android.widget.TextView;
 /**
  * This is an example of using the accelerometer to integrate the device's
  * acceleration to a position using the Verlet method. This is illustrated with
@@ -55,6 +59,7 @@ public class AccelerometerPlayActivity extends Activity {
     private WindowManager mWindowManager;
     private Display mDisplay;
     private WakeLock mWakeLock;
+    private ShapeDrawable mDrawable;
 
     /** Called when the activity is first created. */
     @Override
@@ -78,6 +83,7 @@ public class AccelerometerPlayActivity extends Activity {
         // instantiate our simulation view and set it as the activity's content
         mSimulationView = new SimulationView(this);
         setContentView(mSimulationView);
+        
     }
 
     @Override
@@ -108,7 +114,7 @@ public class AccelerometerPlayActivity extends Activity {
         // and release our wake-lock
         mWakeLock.release();
     }
-
+        
     class SimulationView extends View implements SensorEventListener {
         // diameter of the balls in meters
         private static final float sBallDiameter = 0.004f;
@@ -125,6 +131,7 @@ public class AccelerometerPlayActivity extends Activity {
         private float mYDpi;
         private float mMetersToPixelsX;
         private float mMetersToPixelsY;
+        CellSystem mCellSystem=new CellSystem();
         private Bitmap mBitmap;
         private Bitmap mWood;
         private float mXOrigin;
@@ -136,6 +143,56 @@ public class AccelerometerPlayActivity extends Activity {
         private float mHorizontalBound;
         private float mVerticalBound;
         private final ParticleSystem mParticleSystem = new ParticleSystem();
+          
+        /*
+         *Defines an untraversable black box
+         */
+        public class Cell
+        {
+			public int x;
+        	public int y;
+        	public int width;
+        	public int height;
+        	public float centerX;
+        	public float centerY;
+        	
+        	public Cell(int posX,int posY, int w, int h)
+        	{
+				// Generates black Area to be un-traversable
+				x=posX;
+				y=posY;
+				width=w;
+				height=h;
+				centerX=x+(width/2);
+				centerY=y+(height/2);
+				mDrawable = new ShapeDrawable(new RectShape());
+			    mDrawable.getPaint().setColor(0xff000000);
+			    mDrawable.setBounds(x, y, x + width, y + height);
+			}
+        	protected void onDraw(Canvas canvas) 
+        	{
+        		mDrawable.draw(canvas);      
+        	}
+        }
+        
+        public class CellSystem
+        {
+        	public Cell mCells[]=new Cell[7];
+        	
+        	CellSystem()
+        	{
+        		for (int i = 0; i < mCells.length; i++) {
+                    mCells[i] = new Cell(i,0,50*i,50);
+                }
+        	}
+        	protected void onDraw(Canvas canvas) 
+        	{
+        		for (int i = 0; i < mCells.length; i++) 
+        		{
+        			mCells[i].onDraw(canvas);      
+        		}
+        	}
+        }
 
         /*
          * Each of our particle holds its previous and current position, its
@@ -170,8 +227,8 @@ public class AccelerometerPlayActivity extends Activity {
                  * but it would hide the concepts from this sample code.
                  */
                 final float invm = 1.0f / m;
-                final float ax = gx * invm;
-                final float ay = gy * invm;
+                final float ax = gx * invm*.25f;
+                final float ay = gy * invm*.25f;
 
                 /*
                  * Time-corrected Verlet integration The position Verlet
@@ -216,6 +273,7 @@ public class AccelerometerPlayActivity extends Activity {
                 } else if (y < -ymax) {
                     mPosY = -ymax;
                 }
+                
             }
         }
 
@@ -223,7 +281,7 @@ public class AccelerometerPlayActivity extends Activity {
          * A particle system is just a collection of particles
          */
         class ParticleSystem {
-            static final int NUM_PARTICLES = 15;
+            static final int NUM_PARTICLES = 1;
             private Particle mBalls[] = new Particle[NUM_PARTICLES];
 
             ParticleSystem() {
@@ -248,7 +306,7 @@ public class AccelerometerPlayActivity extends Activity {
                         final int count = mBalls.length;
                         for (int i = 0; i < count; i++) {
                             Particle ball = mBalls[i];
-                            ball.computePhysics(sx, sy, dT, dTC);
+                            ball.computePhysics(sx/2, sy/2, dT, dTC);
                         }
                     }
                     mLastDeltaT = dT;
@@ -264,7 +322,6 @@ public class AccelerometerPlayActivity extends Activity {
             public void update(float sx, float sy, long now) {
                 // update the system's positions
                 updatePositions(sx, sy, now);
-
                 // We do no more than a limited number of iterations
                 final int NUM_MAX_ITERATIONS = 10;
 
@@ -288,11 +345,11 @@ public class AccelerometerPlayActivity extends Activity {
                             // Check for collisions
                             if (dd <= sBallDiameter2) {
                                 /*
-                                 * add a little bit of entropy, after all nothing is
+                                 * add a little bit of entropy, after nothing is
                                  * perfect in the universe.
                                  */
-                                dx += ((float) Math.random() - 0.5f) * 0.0001f;
-                                dy += ((float) Math.random() - 0.5f) * 0.0001f;
+                                dx += ((float) Math.random() - 0.5f) * 0.00001f;
+                                dy += ((float) Math.random() - 0.5f) * 0.00001f;
                                 dd = dx * dx + dy * dy;
                                 // simulate the spring
                                 final float d = (float) Math.sqrt(dd);
@@ -312,7 +369,6 @@ public class AccelerometerPlayActivity extends Activity {
                     }
                 }
             }
-
             public int getParticleCount() {
                 return mBalls.length;
             }
@@ -357,11 +413,13 @@ public class AccelerometerPlayActivity extends Activity {
             final int dstWidth = (int) (sBallDiameter * mMetersToPixelsX + 0.5f);
             final int dstHeight = (int) (sBallDiameter * mMetersToPixelsY + 0.5f);
             mBitmap = Bitmap.createScaledBitmap(ball, dstWidth, dstHeight, true);
-
+            
+            
             Options opts = new Options();
             opts.inDither = true;
             opts.inPreferredConfig = Bitmap.Config.RGB_565;
-            mWood = BitmapFactory.decodeResource(getResources(), R.drawable.wood, opts);
+            Bitmap wood= BitmapFactory.decodeResource(getResources(), R.drawable.wood, opts);
+            mWood = Bitmap.createScaledBitmap(wood,800,1280, true);
         }
 
         @Override
@@ -419,6 +477,8 @@ public class AccelerometerPlayActivity extends Activity {
 
             canvas.drawBitmap(mWood, 0, 0, null);
 
+            mCellSystem.onDraw(canvas);
+
             /*
              * compute the new position of our object, based on accelerometer
              * data and present time.
@@ -426,8 +486,8 @@ public class AccelerometerPlayActivity extends Activity {
 
             final ParticleSystem particleSystem = mParticleSystem;
             final long now = mSensorTimeStamp + (System.nanoTime() - mCpuTimeStamp);
-            final float sx = mSensorX;
-            final float sy = mSensorY;
+            final float sx = mSensorX/2;
+            final float sy = mSensorY/2;
 
             particleSystem.update(sx, sy, now);
 
