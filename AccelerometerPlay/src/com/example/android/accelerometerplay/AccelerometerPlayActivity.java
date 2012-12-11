@@ -24,7 +24,6 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.BitmapFactory.Options;
 import android.graphics.drawable.ShapeDrawable;
-import android.graphics.drawable.shapes.OvalShape;
 import android.graphics.drawable.shapes.RectShape;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -38,7 +37,6 @@ import android.view.Display;
 import android.view.Surface;
 import android.view.View;
 import android.view.WindowManager;
-import android.widget.TextView;
 /**
  * This is an example of using the accelerometer to integrate the device's
  * acceleration to a position using the Verlet method. This is illustrated with
@@ -155,10 +153,12 @@ public class AccelerometerPlayActivity extends Activity {
         	public int height;
         	public float centerX;
         	public float centerY;
-        	
+        	//int colors[]={255,0,0,0};
+        	//Bitmap block= Bitmap.createBitmap(colors,25,50,Bitmap.Config.RGB_565);
         	public Cell(int posX,int posY, int w, int h)
         	{
 				// Generates black Area to be un-traversable
+        		boolean inWall;
 				x=posX;
 				y=posY;
 				width=w;
@@ -171,7 +171,8 @@ public class AccelerometerPlayActivity extends Activity {
 			}
         	protected void onDraw(Canvas canvas) 
         	{
-        		mDrawable.draw(canvas);      
+        		//canvas.drawBitmap(block,x,y,null);
+        		mDrawable.draw(canvas);
         	}
         }
         
@@ -192,6 +193,27 @@ public class AccelerometerPlayActivity extends Activity {
         			mCells[i].onDraw(canvas);      
         		}
         	}
+        	public int Length() {
+                return mCells.length;
+            }
+
+            public float X(int i) {
+                return mCells[i].centerX;
+            }
+
+            public float Y(int i) {
+                return mCells[i].centerY;
+            }
+            
+            public float Width(int i)
+            {
+            	return mCells[i].width;
+            }
+            
+            public float Height(int i)
+            {
+            	return mCells[i].height;
+            }
         }
 
         /*
@@ -261,6 +283,7 @@ public class AccelerometerPlayActivity extends Activity {
             public void resolveCollisionWithBounds() {
                 final float xmax = mHorizontalBound;
                 final float ymax = mVerticalBound;
+                CellSystem cells= mCellSystem;
                 final float x = mPosX;
                 final float y = mPosY;
                 if (x > xmax) {
@@ -272,6 +295,14 @@ public class AccelerometerPlayActivity extends Activity {
                     mPosY = ymax;
                 } else if (y < -ymax) {
                     mPosY = -ymax;
+                }
+                
+                for(int i=0;i<cells.Length();i++)
+                {
+                	if((x-(cells.X(i)+cells.Width(i)/2))<cells.Width(i)/2)
+                	{
+                		//mPosX=cells.X(i)-cells.Width(i)/2;
+                	}
                 }
                 
             }
