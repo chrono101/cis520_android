@@ -16,13 +16,18 @@
 
 package com.example.android.accelerometerplay;
 
+import java.util.ArrayList;
+
 import android.R.string;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.BitmapFactory.Options;
+import android.graphics.Paint;
+import android.graphics.RectF;
 import android.graphics.drawable.ShapeDrawable;
 import android.graphics.drawable.shapes.RectShape;
 import android.hardware.Sensor;
@@ -33,10 +38,13 @@ import android.os.Bundle;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.Display;
 import android.view.Surface;
 import android.view.View;
 import android.view.WindowManager;
+import java.util.*;
+
 /**
  * This is an example of using the accelerometer to integrate the device's
  * acceleration to a position using the Verlet method. This is illustrated with
@@ -57,7 +65,7 @@ public class AccelerometerPlayActivity extends Activity {
     private WindowManager mWindowManager;
     private Display mDisplay;
     private WakeLock mWakeLock;
-    private ShapeDrawable mDrawable;
+    private Random random;
 
     /** Called when the activity is first created. */
     @Override
@@ -129,7 +137,7 @@ public class AccelerometerPlayActivity extends Activity {
         private float mYDpi;
         private float mMetersToPixelsX;
         private float mMetersToPixelsY;
-        CellSystem mCellSystem=new CellSystem();
+        CellSystem mCellSystem = new CellSystem();
         private Bitmap mBitmap;
         private Bitmap mWood;
         private float mXOrigin;
@@ -147,73 +155,104 @@ public class AccelerometerPlayActivity extends Activity {
          */
         public class Cell
         {
-			public int x;
-        	public int y;
-        	public int width;
-        	public int height;
+			public float x;
+        	public float y;
+        	public float width;
+        	public float height;
         	public float centerX;
         	public float centerY;
+        	public RectF rect;
+        	public Paint paint;
+        	public boolean wall;
+        	public boolean inMaze;
         	//int colors[]={255,0,0,0};
         	//Bitmap block= Bitmap.createBitmap(colors,25,50,Bitmap.Config.RGB_565);
-        	public Cell(int posX,int posY, int w, int h)
+        	public Cell(float posX, float posY, float w, float h)
         	{
 				// Generates black Area to be un-traversable
-        		boolean inWall;
+        		wall = true;
+        		inMaze = false;
 				x=posX;
 				y=posY;
 				width=w;
 				height=h;
 				centerX=x+(width/2);
 				centerY=y+(height/2);
-				mDrawable = new ShapeDrawable(new RectShape());
-			    mDrawable.getPaint().setColor(0xff000000);
-			    mDrawable.setBounds(x, y, x + width, y + height);
+				rect = new RectF(x, y, (x + width), (y + height));
+			    paint = new Paint();
+			    paint.setColor(0xff000000);
 			}
-        	protected void onDraw(Canvas canvas) 
+        	
+        	public void MakeWall() {
+        		this.paint.setColor(0xff000000);        		
+        	}
+        	
+        	public void MakeNotWall() {
+        		this.paint.setColor(0x00000000);
+        		this.wall = false;
+        	}
+        	
+        	protected void draw(Canvas canvas) 
         	{
-        		//canvas.drawBitmap(block,x,y,null);
-        		mDrawable.draw(canvas);
+        		Log.i("AccelerometerPlayActivity", "Inside drawing cell at " + this.x + ":" + this.y);
+        		canvas.drawRect(rect, paint);
+				
         	}
         }
         
         public class CellSystem
         {
-        	public Cell mCells[]=new Cell[7];
+        	private int n = 20;
+        	private int m = 30;
+        	public Cell mCells[][] = new Cell[n][m];
+        	private ArrayList<Cell> WallList = new ArrayList<Cell>();
         	
         	CellSystem()
         	{
+        		// Create a blank array of cells
         		for (int i = 0; i < mCells.length; i++) {
-                    mCells[i] = new Cell(i,0,50*i,50);
+                    for (int j = 0; j < mCells[i].length; j++) {
+                    	Log.i("AccelereometerPlayActivity", "Creating cell with i=" + i + " j=" + j);
+                    	
+                    	mCells[i][j] = new Cell(i*(800/n), j*(1280/m) , 800/n, 1280/m);
+                    	
+                    	if (i > 5) {
+                    		mCells[i][j].MakeNotWall();
+                    	}
+                      	
+                    	
+                    	
+                    }
                 }
+        		
+        		// Pick the first cell and mark it as part of the maze
+        		
+        		//mCells[0][0].inMaze = true;
         	}
-        	protected void onDraw(Canvas canvas) 
+        	
+        	/*private void AddNeighborsToWallList(int i, int j) {
+        		if (i <= 0) {
+        			if (j <= 0) {
+        				WallList.add(this.mCells[i+1][j]);
+        				WallList.add(this.mCells[i][j+1]);
+        			} else if (j >= m - 1) {
+        				WallList.add(this.mCells[i][j-1]);
+        				WallList.add(this.mCells[i+1][j]);
+        			} 
+        		} 
+        	}*/
+        	
+        	protected void draw(Canvas canvas) 
         	{
+        		// Draw cells to canvas
         		for (int i = 0; i < mCells.length; i++) 
         		{
-        			mCells[i].onDraw(canvas);      
+        			for (int j = 0; j < mCells[i].length; j++) {
+        				Log.i("AccelerometerPlayActivity", "Drawing cell at " + i + ":" + j);
+        				mCells[i][j].draw(canvas);      
+        			}
         		}
         	}
-        	public int Length() {
-                return mCells.length;
-            }
-
-            public float X(int i) {
-                return mCells[i].centerX;
-            }
-
-            public float Y(int i) {
-                return mCells[i].centerY;
-            }
-            
-            public float Width(int i)
-            {
-            	return mCells[i].width;
-            }
-            
-            public float Height(int i)
-            {
-            	return mCells[i].height;
-            }
         }
 
         /*
@@ -283,7 +322,7 @@ public class AccelerometerPlayActivity extends Activity {
             public void resolveCollisionWithBounds() {
                 final float xmax = mHorizontalBound;
                 final float ymax = mVerticalBound;
-                CellSystem cells= mCellSystem;
+                Cell[][] cells= mCellSystem.mCells;
                 final float x = mPosX;
                 final float y = mPosY;
                 if (x > xmax) {
@@ -297,11 +336,14 @@ public class AccelerometerPlayActivity extends Activity {
                     mPosY = -ymax;
                 }
                 
-                for(int i=0;i<cells.Length();i++)
+                for (int i = 0 ; i < cells.length; i++)
                 {
-                	if((x-(cells.X(i)+cells.Width(i)/2))<cells.Width(i)/2)
-                	{
-                		//mPosX=cells.X(i)-cells.Width(i)/2;
+                	for (int j = 0; j < cells[i].length; j++) {
+                		if  (cells[i][j].rect.contains((float)x, (float)y)) {
+                			mPosX = i;
+                			mPosY = j;
+                			cells[i][j].paint.setColor(0xffff0000);
+                		}
                 	}
                 }
                 
@@ -463,7 +505,8 @@ public class AccelerometerPlayActivity extends Activity {
             mVerticalBound = ((h / mMetersToPixelsY - sBallDiameter) * 0.5f);
         }
 
-        @Override
+        @SuppressLint("NewApi")
+		@Override
         public void onSensorChanged(SensorEvent event) {
             if (event.sensor.getType() != Sensor.TYPE_ACCELEROMETER)
                 return;
@@ -503,12 +546,16 @@ public class AccelerometerPlayActivity extends Activity {
         protected void onDraw(Canvas canvas) {
 
             /*
-             * draw the background
+             * Draw the wood
              */
 
             canvas.drawBitmap(mWood, 0, 0, null);
 
-            mCellSystem.onDraw(canvas);
+            /*
+             * Draw the maze
+             */
+            mCellSystem.draw(canvas);
+
 
             /*
              * compute the new position of our object, based on accelerometer
@@ -539,7 +586,7 @@ public class AccelerometerPlayActivity extends Activity {
                 final float y = yc - particleSystem.getPosY(i) * ys;
                 canvas.drawBitmap(bitmap, x, y, null);
             }
-
+            
             // and make sure to redraw asap
             invalidate();
         }
