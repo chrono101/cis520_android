@@ -184,7 +184,8 @@ public class AccelerometerPlayActivity extends Activity {
 			}
         	
         	public void MakeWall() {
-        		this.paint.setColor(0xff000000);        		
+        		this.paint.setColor(0xff000000);
+        		this.wall = true;
         	}
         	
         	public void MakeNotWall() {
@@ -202,8 +203,8 @@ public class AccelerometerPlayActivity extends Activity {
         
         public class CellSystem
         {
-        	private int n = 20;
-        	private int m = 30;
+        	private int n = 10;
+        	private int m = 20;
         	public Cell mCells[][] = new Cell[n][m];
         	private ArrayList<Cell> WallList = new ArrayList<Cell>();
         	
@@ -216,7 +217,8 @@ public class AccelerometerPlayActivity extends Activity {
                     	
                     	mCells[i][j] = new Cell(i*(800/n), j*(1280/m) , 800/n, 1280/m);
                     	
-                    	if (i > 5) {
+                    	
+                    	if ((i % 2) == 0) {
                     		mCells[i][j].MakeNotWall();
                     	}
                       	
@@ -322,7 +324,7 @@ public class AccelerometerPlayActivity extends Activity {
             public void resolveCollisionWithBounds() {
                 final float xmax = mHorizontalBound;
                 final float ymax = mVerticalBound;
-                Cell[][] cells= mCellSystem.mCells;
+                
                 final float x = mPosX;
                 final float y = mPosY;
                 if (x > xmax) {
@@ -336,13 +338,24 @@ public class AccelerometerPlayActivity extends Activity {
                     mPosY = -ymax;
                 }
                 
+                
+                
+                Cell[][] cells= mCellSystem.mCells;
+                
                 for (int i = 0 ; i < cells.length; i++)
                 {
                 	for (int j = 0; j < cells[i].length; j++) {
                 		if  (cells[i][j].rect.contains((float)x, (float)y)) {
-                			mPosX = i;
-                			mPosY = j;
+                			float wallX = cells[i][j].rect.centerX();
+                			float wallY = cells[i][j].rect.centerY();
+                			Log.w("AccelerometerPlayActivity", "Ball at position " + x + "," + y + " collides with wall at" + wallX + "," + wallY);
                 			cells[i][j].paint.setColor(0xffff0000);
+                		} else {
+                			if (cells[i][j].wall == true) {
+                				cells[i][j].paint.setColor(0xff000000);
+                			} else {
+                				cells[i][j].paint.setColor(0x00000000);
+                			}                			
                 		}
                 	}
                 }
