@@ -17,8 +17,6 @@
 package com.example.android.accelerometerplay;
 
 import java.util.ArrayList;
-
-import android.R.string;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
@@ -180,11 +178,11 @@ public class AccelerometerPlayActivity extends Activity {
 				centerY=y+(height/2);
 				rect = new RectF(x, y, (x + width), (y + height));
 			    paint = new Paint();
-			    paint.setColor(0xff000000);
+			    paint.setColor(0xff000077);
 			}
         	
         	public void MakeWall() {
-        		this.paint.setColor(0xff000000);
+        		this.paint.setColor(0xff000077);
         		this.wall = true;
         	}
         	
@@ -237,7 +235,7 @@ public class AccelerometerPlayActivity extends Activity {
             			Random rand = new Random();
         				cell = WallList.get(rand.nextInt(WallList.size()-1));
         			}
-        			Log.w("AccelerometerPlayActivity", "1: "+GetCellIndices(cell)[0]+" "+GetCellIndices(cell)[1]);
+        			Log.w("AccelerometerPlayActivity", "1 cell: "+GetCellIndices(cell)[0]+" "+GetCellIndices(cell)[1]);
 
         			
         			// Check that cell is found in grid. Shouldn't be needed but just to make sure...
@@ -245,17 +243,23 @@ public class AccelerometerPlayActivity extends Activity {
 
         		    	// If opposite neighbor isn't in maze, make cell a passage & the neighbor a wall
         		    	Cell neighbor = GetOppositeNeighbor(GetCellIndices(cell)[0],GetCellIndices(cell)[1]);
-		    			if (neighbor != null && !neighbor.inMaze) {
-		        			Log.w("AccelerometerPlayActivity", "2: "+GetCellIndices(neighbor)[0]+" "+GetCellIndices(neighbor)[1]);
-
+		    			if (!neighbor.inMaze) {
+		        			Log.w("AccelerometerPlayActivity", "2 neighbor: "+GetCellIndices(neighbor)[0]+" "+GetCellIndices(neighbor)[1]);
 		    				cell.MakePassage();
-		    				cell.inMaze = true;
+		    		//		cell.inMaze = true;
 		    				neighbor.MakeWall();
 		    				neighbor.inMaze = true;
-		    		    	AddNeighborsToWallList(GetCellIndices(neighbor)[0],GetCellIndices(neighbor)[1]);
+		    		    	int count = AddNeighborsToWallList(GetCellIndices(neighbor)[0],GetCellIndices(neighbor)[1]);
+		        			Log.i("AccelerometerPlayActivity", +count+" neighbors added.");
+
+		    		    	for (int a=0; a<WallList.size(); a++) {
+			        		//	Log.i("AccelerometerPlayActivity", 
+			        		//			GetCellIndices(WallList.get(a))[0]+" "+GetCellIndices(WallList.get(a))[1]);
+		    		    	}
 		    			} else {
-		        			Log.i("AccelerometerPlayActivity", "3");
 		    				WallList.remove(cell);
+		        			Log.i("AccelerometerPlayActivity", "3: Size of walllist="+WallList.size());
+
 		    			}
 		    			
         		    }
@@ -263,15 +267,17 @@ public class AccelerometerPlayActivity extends Activity {
         	}
         	
         	private Cell GetOppositeNeighbor(int i, int j) {
-    			Log.i("AccelerometerPlayActivity", "4: "i+" "j);
-
         		if ((i+1) < n) {                 
+        			Log.i("AccelerometerPlayActivity", "4: right"+i+" "+j);
         			return mCells[i+1][j]; // return cell to Right
         		} else if ((j+1) < m) {
+        			Log.i("AccelerometerPlayActivity", "4: below "+i+" "+j);
         			return mCells[i][j+1]; // return cell Below
         		} else if ((i-1) >= 0) {
+        			Log.i("AccelerometerPlayActivity", "4: left"+i+" "+j);
         			return mCells[i-1][j]; // return cell to Left
         		} else if ((j-1) >= 0) {
+        			Log.i("AccelerometerPlayActivity", "4: above"+i+" "+j);
         			return mCells[i][j-1]; // return cell Above
         		} else {
         			return null;
@@ -293,76 +299,85 @@ public class AccelerometerPlayActivity extends Activity {
         		return indices;
         	}
         	
-        	private void AddNeighborsToWallList(int i, int j) {
+        	private void addCell(Cell c) {
+        		if (!c.inMaze) {
+        			WallList.add(c);
+        		}
+        	}
+        	
+        	private int AddNeighborsToWallList(int i, int j) {
     			Log.i("AccelerometerPlayActivity", "6");
-
+    			int count = 0;
         		// If we are at edge or outside of Left side of screen
         		if (i <= 0) {
+    				addCell(this.mCells[i+1][j]);
+    				count += 3;
         			if (j <= 0) {
-            			Log.i("AccelerometerPlayActivity", "6.1");
-
-        				// If we are at top Left corner
-        				WallList.add(this.mCells[i+1][j]);
-        				WallList.add(this.mCells[i][j+1]);
-        			} else if (j >= (m - 1)) {
-            			Log.i("AccelerometerPlayActivity", "6.2");
-
-            			// If we are at bottom Left corner
-        				WallList.add(this.mCells[i][j-1]);
-        				WallList.add(this.mCells[i+1][j]);
+            			Log.i("AccelerometerPlayActivity", "6.1: top left corner");
+        				addCell(this.mCells[i][j+1]);
+    //    				addCell(this.mCells[i+1][j+1]);
+         			} else if (j >= (m - 1)) {
+            			Log.i("AccelerometerPlayActivity", "6.2 bottom left corner");
+        				addCell(this.mCells[i][j-1]);
+      //  				addCell(this.mCells[i+1][j-1]);
         			} else {
-        				// If we are in not in corner but still on Left edge
-            			Log.i("AccelerometerPlayActivity", "6.3");
-
-        				WallList.add(this.mCells[i][j-1]);
-        				WallList.add(this.mCells[i+1][j]);
-        				WallList.add(this.mCells[i][j+1]);
+            			Log.i("AccelerometerPlayActivity", "6.3 left edge");
+        				addCell(this.mCells[i][j-1]);
+        //				addCell(this.mCells[i+1][j-1]);
+        	//			addCell(this.mCells[i+1][j+1]);
+        				addCell(this.mCells[i][j+1]);
+        				count += 4;
         			}
         		} 
 				// If we are at edge or outside of Right side of screen
         		else if (i >= (n - 1)) {
+    				addCell(this.mCells[i-1][j]);
+    				count += 3;
         			if (j <= 0) {
-        				// If we are at top Right corner
-            			Log.i("AccelerometerPlayActivity", "6.4");
-
-        				WallList.add(this.mCells[i-1][j]);
-        				WallList.add(this.mCells[i][j+1]);
+            			Log.i("AccelerometerPlayActivity", "6.4: top right corner");
+        				addCell(this.mCells[i][j+1]);
+   //     				addCell(this.mCells[i-1][j+1]);
         			} else if (j >= (n - 1)) {
-            			// If we are at bottom Right corner
-            			Log.i("AccelerometerPlayActivity", "6.5");
-
-        				WallList.add(this.mCells[i][j-1]);
-        				WallList.add(this.mCells[i-1][j]);
+            			Log.i("AccelerometerPlayActivity", "6.5: bottom right corner");
+        				addCell(this.mCells[i][j-1]);
+     //   				addCell(this.mCells[i-1][j-1]);
         			} else {
-        				// If we are in not in corner but still on edge
-            			Log.i("AccelerometerPlayActivity", "6.6");
-
-        				WallList.add(this.mCells[i][j-1]);
-        				WallList.add(this.mCells[i-1][j]);
-        				WallList.add(this.mCells[i][j+1]);
+            			Log.i("AccelerometerPlayActivity", "6.6: right edge");
+        				addCell(this.mCells[i][j-1]);
+       // 				addCell(this.mCells[i-1][j-1]);
+        //				addCell(this.mCells[i-1][j+1]);
+        				addCell(this.mCells[i][j+1]);
+        				count += 4;
         			}
         		} else if (j <= 0) {
-        			Log.i("AccelerometerPlayActivity", "6.7");
-
-        			// We are at top of screen
-					WallList.add(this.mCells[i-1][j]);
-					WallList.add(this.mCells[i][j+1]);
-					WallList.add(this.mCells[i+1][j]);
+        			count += 5;
+        			Log.i("AccelerometerPlayActivity", "6.7: top of screen");
+					addCell(this.mCells[i-1][j]);
+					addCell(this.mCells[i][j+1]);
+    		//		addCell(this.mCells[i-1][j+1]);
+    		//		addCell(this.mCells[i+1][j+1]);
+					addCell(this.mCells[i+1][j]);
         		} else if (j >= (m - 1)) {
-        			Log.i("AccelerometerPlayActivity", "6.8");
-
-        			// We are at bottom of screen
-    				WallList.add(this.mCells[i-1][j]);
-    				WallList.add(this.mCells[i][j-1]);
-    				WallList.add(this.mCells[i+1][j]);
+        			count += 5;
+        			Log.i("AccelerometerPlayActivity", "6.8: bottom of screen");
+    				addCell(this.mCells[i-1][j]);
+    				addCell(this.mCells[i][j-1]);
+    				addCell(this.mCells[i+1][j]);
+    		//		addCell(this.mCells[i-1][j-1]);
+    		//		addCell(this.mCells[i+1][j-1]);
         		} else {
-        			Log.i("AccelerometerPlayActivity", "6.9");
-        			// We are not in an edge case, add all neighbors
-        			WallList.add(this.mCells[i][j-1]);   // Up neighbor
-        			WallList.add(this.mCells[i-1][j]);   // Left neighbor
-        			WallList.add(this.mCells[i+1][j]);   // Right neighbor 
-        			WallList.add(this.mCells[i][j+1]);   // Down neighbor
+        			Log.i("AccelerometerPlayActivity", "6.9: center");
+        			count += 8;
+        			addCell(this.mCells[i][j-1]);   // Up neighbor
+        			addCell(this.mCells[i-1][j]);   // Left neighbor
+        			addCell(this.mCells[i+1][j]);   // Right neighbor 
+        			addCell(this.mCells[i][j+1]);   // Down neighbor
+    			//	addCell(this.mCells[i-1][j+1]);
+    			//	addCell(this.mCells[i+1][j+1]);
+    			//	addCell(this.mCells[i-1][j-1]);
+    			//	addCell(this.mCells[i+1][j-1]);
         		}
+        		return count;
         	}
         	
         	protected void draw(Canvas canvas) 
@@ -384,8 +399,8 @@ public class AccelerometerPlayActivity extends Activity {
          * coefficient.
          */
         class Particle {
-            private float mPosX;
-            private float mPosY;
+            private float mPosX=0;
+            private float mPosY=0;
             private float mAccelX;
             private float mAccelY;
             private float mLastPosX;
@@ -446,8 +461,8 @@ public class AccelerometerPlayActivity extends Activity {
                 final float xmax = mHorizontalBound;
                 final float ymax = mVerticalBound;
                 
-                final float x = mPosX;
-                final float y = mPosY;
+                float x = mPosX;
+                float y = mPosY;
                 if (x > xmax) {
                     mPosX = xmax;
                 } else if (x < -xmax) {
@@ -462,18 +477,37 @@ public class AccelerometerPlayActivity extends Activity {
                 
                 
                 Cell[][] cells= mCellSystem.mCells;
-                
+                float tempx=(mXDpi / 0.0254f);
+                float tempy= (mYDpi / 0.0254f);                
+                x*=tempx;
+                y*=-tempy;
+                x+=800/2;
+                y+=1280/2;
+                if(x<0)
+                	x*=-1;
+                if(y<0)
+                	y*=(-1);
+                RectF check = new RectF(x-12,y+12,x+12,y-12); 
+
                 for (int i = 0 ; i < cells.length; i++)
                 {
                 	for (int j = 0; j < cells[i].length; j++) {
-                		if  (cells[i][j].rect.contains((float)x, (float)y)) {
+                		if  (cells[i][j].rect.contains((float)x,(float)y)) {//.intersects(check,cells[i][j].rect)) {
+
+
                 			float wallX = cells[i][j].rect.centerX();
                 			float wallY = cells[i][j].rect.centerY();
                 	//		Log.w("AccelerometerPlayActivity", "Ball at position " + x + "," + y + " collides with wall at" + wallX + "," + wallY);
+                			if(cells[i][j].wall)
+                			{
+                				mPosX=mLastPosX;
+                				mPosY=mLastPosY;
+                			}
+
                 			cells[i][j].paint.setColor(0xffff0000);
                 		} else {
                 			if (cells[i][j].wall == true) {
-                				cells[i][j].paint.setColor(0xff000000);
+                				cells[i][j].paint.setColor(0xff000077);
                 			} else {
                 				cells[i][j].paint.setColor(0x00000000);
                 			}                			
