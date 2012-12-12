@@ -17,8 +17,6 @@
 package com.example.android.accelerometerplay;
 
 import java.util.ArrayList;
-
-import android.R.string;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
@@ -340,6 +338,7 @@ public class AccelerometerPlayActivity extends Activity {
                 {
                 	for (int j = 0; j < cells[i].length; j++) {
                 		if  (cells[i][j].rect.contains((float)x, (float)y)) {
+                			
                 			mPosX = i;
                 			mPosY = j;
                 			cells[i][j].paint.setColor(0xffff0000);
