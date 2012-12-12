@@ -261,8 +261,8 @@ public class AccelerometerPlayActivity extends Activity {
          * coefficient.
          */
         class Particle {
-            private float mPosX;
-            private float mPosY;
+            private float mPosX=0;
+            private float mPosY=0;
             private float mAccelX;
             private float mAccelY;
             private float mLastPosX;
@@ -323,8 +323,8 @@ public class AccelerometerPlayActivity extends Activity {
                 final float xmax = mHorizontalBound;
                 final float ymax = mVerticalBound;
                 
-                final float x = mPosX;
-                final float y = mPosY;
+                float x = mPosX;
+                float y = mPosY;
                 if (x > xmax) {
                     mPosX = xmax;
                 } else if (x < -xmax) {
@@ -339,15 +339,31 @@ public class AccelerometerPlayActivity extends Activity {
                 
                 
                 Cell[][] cells= mCellSystem.mCells;
-                
+                float tempx=(mXDpi / 0.0254f);
+                float tempy= (mYDpi / 0.0254f);                
+                x*=tempx;
+                y*=-tempy;
+                x+=800/2;
+                y+=1280/2;
+                if(x<0)
+                	x*=-1;
+                if(y<0)
+                	y*=(-1);
+                RectF check = new RectF(x-12,y+12,x+12,y-12); 
+
                 for (int i = 0 ; i < cells.length; i++)
                 {
                 	for (int j = 0; j < cells[i].length; j++) {
-                		if  (cells[i][j].rect.contains((float)x, (float)y)) {
+                		if  (cells[i][j].rect.intersects(check,cells[i][j].rect)) {
 
                 			float wallX = cells[i][j].rect.centerX();
                 			float wallY = cells[i][j].rect.centerY();
-                			Log.w("AccelerometerPlayActivity", "Ball at position " + x + "," + y + " collides with wall at" + wallX + "," + wallY);
+                			Log.w("AccelerometerPlayActivity", "Ball at position " + x  + "," + y+ " collides with wall at" + wallX + "," + wallY);
+                			if(cells[i][j].wall)
+                			{
+                				mPosX=mLastPosX;
+                				mPosY=mLastPosY;
+                			}
 
                 			cells[i][j].paint.setColor(0xffff0000);
                 		} else {
