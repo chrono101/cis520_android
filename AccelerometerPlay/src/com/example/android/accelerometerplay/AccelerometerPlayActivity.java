@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -49,7 +49,7 @@ import java.util.*;
  * a very simple particle system comprised of a few iron balls freely moving on
  * an inclined wooden table. The inclination of the virtual table is controlled
  * by the device's accelerometer.
- * 
+ *
  * @see SensorManager
  * @see SensorEvent
  * @see Sensor
@@ -147,46 +147,6 @@ public class AccelerometerPlayActivity extends Activity {
 		private float mHorizontalBound;
 		private float mVerticalBound;
 		private final ParticleSystem mParticleSystem = new ParticleSystem();
-		
-		/*
-		 *Defines an untraversable black box wall
-		 */
-		public class Wall
-		{
-			public float x;
-			public float y;
-			public float width;
-			public float height;
-			public float centerX;
-			public float centerY;
-			public RectF rect;
-			public Paint paint;
-			public boolean inMaze;
-			public boolean wall;
-			//int colors[]={255,0,0,0};
-			//Bitmap block= Bitmap.createBitmap(colors,25,50,Bitmap.Config.RGB_565);
-			public Wall(float posX, float posY, float w, float h)
-			{
-				// Generates black Area to be un-traversable
-				inMaze = false;
-				x=posX;
-				y=posY;
-				width=w;
-				height=h;
-				centerX=x+(width/2);
-				centerY=y+(height/2);
-				rect = new RectF(x, y,width,height);
-				paint = new Paint();
-				paint.setColor(0xff077077);
-				wall = true;
-			}
-			protected void draw(Canvas canvas) 
-			{
-				//		Log.i("AccelerometerPlayActivity", "Inside drawing cell at " + this.x + ":" + this.y);
-				canvas.drawRect(rect, paint);
-			}
-			
-		}
 
 		/*
 		 *Defines an untraversable black box
@@ -201,42 +161,50 @@ public class AccelerometerPlayActivity extends Activity {
 			public float centerY;
 			public RectF rect;
 			public Paint paint;
+			public boolean wall;
 			public boolean inMaze;
-			public Wall hWall;
-			public Wall vWall;
+			public boolean isEnd;
 			//int colors[]={255,0,0,0};
 			//Bitmap block= Bitmap.createBitmap(colors,25,50,Bitmap.Config.RGB_565);
 			public Cell(float posX, float posY, float w, float h)
 			{
 				// Generates black Area to be un-traversable
+				wall = true;
 				inMaze = false;
+				isEnd = false;
 				x=posX;
 				y=posY;
-				vWall = new Wall(x+width,y+height,4,height);
-				hWall = new Wall(x+width,y+height,width,4);
 				width=w;
 				height=h;
 				centerX=x+(width/2);
 				centerY=y+(height/2);
 				rect = new RectF(x, y, (x + width), (y + height));
 				paint = new Paint();
-				paint.setColor(0xff000077);
+				paint.setColor(0xff3B2C20);
 			}
 
-			protected void draw(Canvas canvas) 
+			public void MakeWall() {
+				this.paint.setColor(0xff3B2C20);
+				this.wall = true;
+			}
+
+			public void MakePassage() {
+				this.paint.setColor(0x00000000);
+				this.wall = false;
+			}
+
+			protected void draw(Canvas canvas)
 			{
-				//		Log.i("AccelerometerPlayActivity", "Inside drawing cell at " + this.x + ":" + this.y);
-				//canvas.drawRect(rect, paint);
-				vWall.draw(canvas);
-				hWall.draw(canvas);
+				// Log.i("AccelerometerPlayActivity", "Inside drawing cell at " + this.x + ":" + this.y);
+				canvas.drawRect(rect, paint);
 
 			}
 		}
 
 		public class CellSystem
 		{
-			private int n = 10;
-			private int m = 20;
+			private int n = 20;
+			private int m = 35;
 			public Cell mCells[][] = new Cell[n][m];
 			private ArrayList<Cell> WallList = new ArrayList<Cell>();
 
@@ -248,11 +216,7 @@ public class AccelerometerPlayActivity extends Activity {
 						Log.i("AccelerometerPlayActivity", "Creating cell with i=" + i + " j=" + j);
 
 						mCells[i][j] = new Cell(i*(800/n), j*(1280/m) , 800/n, 1280/m);
-						/*	if ((i%2==0 && j%2==0) || (i%2!=0 && j%2!=0){
-							mCells[i][j].MakeWall();
-						} else {
-							mCells[i][j].MakePassage();
-						}   */
+						mCells[i][j].MakeWall();
 
 					}
 				}
@@ -261,7 +225,7 @@ public class AccelerometerPlayActivity extends Activity {
 
 
 				// Pick the first cell and mark it as part of the maze
-			//	mCells[0][0].MakePassage();
+				mCells[0][0].MakePassage();
 				mCells[0][0].inMaze = true;
 
 				// Add neighbors to WallList
@@ -279,44 +243,48 @@ public class AccelerometerPlayActivity extends Activity {
 					// Choose random Wall
 					Cell cell = WallList.get(0);
 					if (WallList.size() != 1) {
-					//	Random rand = new Random();
-						//cell = WallList.get(rand.nextInt(WallList.size()-1));
+						Random rand = new Random();
+						cell = WallList.get(rand.nextInt(WallList.size()-1));
 					}
-					Log.w("AccelerometerPlayActivity", "1 & cell: "+GetCellIndices(cell)[0]+" "+GetCellIndices(cell)[1] + " WallList size="+WallList.size());
-					WallList.clear();
+				//	Log.w("AccelerometerPlayActivity", "1 & cell: "+GetCellIndices(cell)[0]+" "+GetCellIndices(cell)[1] + " WallList size="+WallList.size());
 					// Check that cell is found in grid. Shouldn't be needed but just to make sure...
 					if (GetCellIndices(cell)[0] != -1 && GetCellIndices(cell)[1] != -1) {
-						
+
 						// If opposite neighbor isn't in maze, make cell a passage & the neighbor a wall
 						if (GetOppositeNeighbor(GetCellIndices(cell)[0],GetCellIndices(cell)[1]) != null) {
 							Cell neighbor = GetOppositeNeighbor(GetCellIndices(cell)[0],GetCellIndices(cell)[1]);
 							if (!neighbor.inMaze) {
-								Log.w("AccelerometerPlayActivity", "2 & neighbor is in maze: "+GetCellIndices(neighbor)[0]+" "+GetCellIndices(neighbor)[1]);
-					//			cell.MakePassage();
+						//		Log.w("AccelerometerPlayActivity", "2 & neighbor is in maze: "+GetCellIndices(neighbor)[0]+" "+GetCellIndices(neighbor)[1]);
+								cell.MakePassage();
 								cell.inMaze = true;
 								neighbor.inMaze = true;
-								count = AddNeighborsToWallList(GetCellIndices(neighbor)[0],GetCellIndices(neighbor)[1]);
-
-								Log.i("AccelerometerPlayActivity", "3.5 & "+count+" neighbors added. WallList now: "+WallList.size());
-								for (int a=0; a<WallList.size(); a++) {
-									Log.e("AccelerometerPlayActivity",
-											"& Wall: "+GetCellIndices(WallList.get(a))[0]+" "+GetCellIndices(WallList.get(a))[1]);
-									if (GetCellIndices(WallList.get(a))[1]==19) {
-										// Log.e("AccelerometerPlayActivity", "Found "+GetCellIndices(WallList.get(a))[0]+" "+GetCellIndices(WallList.get(a))[1]);
-										}
+								//neighbor.MakePassage();
+								if (!WallList.contains(neighbor)) {
+									WallList.add(neighbor);
 								}
+								count = AddNeighborsToWallList(GetCellIndices(cell)[0],GetCellIndices(cell)[1]);
+						//		Log.i("AccelerometerPlayActivity", "3.5 & "+count+" neighbors added. WallList now: "+WallList.size());
 							} else {
 								WallList.remove(cell);
-								Log.d("AccelerometerPlayActivity", "3 & removed cell, Size of walllist="+WallList.size());
+						//		Log.d("AccelerometerPlayActivity", "3 & removed cell, Size of walllist="+WallList.size());
 							} 
 						} else {
 							cell.inMaze = true;
-					//		cell.MakePassage();
 							WallList.remove(cell);
 						}
 
 					}
 				} 
+				Random rand = new Random();
+				while (true) {
+					Cell end = mCells[rand.nextInt(n)][rand.nextInt(m)];
+					if (!end.wall) {
+								Log.d("AccelerometerPlayActivity", "done");
+						end.paint.setColor(0xffffffff);
+						end.isEnd = true;
+						break;
+					}
+				}
 			}
 
 			private Cell GetOppositeNeighbor(int i, int j) {
@@ -395,7 +363,7 @@ public class AccelerometerPlayActivity extends Activity {
 					}
 				} else if (j <= 0) {
 					Log.i("AccelerometerPlayActivity", "6.7: top of screen");
-						Log.e("AccelerometerPlayActivity", "ex Top of screen "+i + " " + j + " "+ count);
+					Log.e("AccelerometerPlayActivity", "ex Top of screen "+i + " " + j + " "+ count);
 					count += addCell(this.mCells[i-1][j]);
 					count += addCell(this.mCells[i][j+1]);
 					count += addCell(this.mCells[i+1][j]);
@@ -514,7 +482,7 @@ public class AccelerometerPlayActivity extends Activity {
 
 				Cell[][] cells= mCellSystem.mCells;
 				float tempx=(mXDpi / 0.0254f);
-				float tempy= (mYDpi / 0.0254f);                
+				float tempy= (mYDpi / 0.0254f);
 				x*=tempx;
 				y*=-tempy;
 				x+=800/2;
@@ -523,30 +491,36 @@ public class AccelerometerPlayActivity extends Activity {
 					x*=-1;
 				if(y<0)
 					y*=(-1);
-				RectF check = new RectF(x-12,y+12,x+12,y-12); 
+				RectF check = new RectF(x-12,y+12,x+12,y-12);
 
 				for (int i = 0 ; i < cells.length; i++)
 				{
 					for (int j = 0; j < cells[i].length; j++) {
-						if  (cells[i][j].rect.contains((float)x,(float)y)) {//.intersects(check,cells[i][j].rect)) {
+						if (cells[i][j].rect.contains((float)x,(float)y)) {//.intersects(check,cells[i][j].rect)) {
 
 
 							float wallX = cells[i][j].rect.centerX();
 							float wallY = cells[i][j].rect.centerY();
-							//		Log.w("AccelerometerPlayActivity", "Ball at position " + x + "," + y + " collides with wall at" + wallX + "," + wallY);
-		/*					if(cells[i][j].wall)
+							// Log.w("AccelerometerPlayActivity", "Ball at position " + x + "," + y + " collides with wall at" + wallX + "," + wallY);
+							if(cells[i][j].wall)
 							{
 								mPosX=mLastPosX;
 								mPosY=mLastPosY;
-							} */
+							} else if (cells[i][j].isEnd) {
+								mCellSystem = new CellSystem();
+							}
+						
 
 							cells[i][j].paint.setColor(0xffff0000);
 						} else {
-							/*if (cells[i][j].wall == true) {
-								cells[i][j].paint.setColor(0xff000077);
-							} else {
+							if (cells[i][j].wall == true) {
+								cells[i][j].paint.setColor(0xff3B2C20);
+							} else if (cells[i][j].isEnd) {
+								cells[i][j].paint.setColor(0xffffffff);
+							}
+							else {
 								cells[i][j].paint.setColor(0x00000000);
-							}       */         			
+							}
 						}
 					}
 				}
@@ -625,17 +599,17 @@ public class AccelerometerPlayActivity extends Activity {
 								 * add a little bit of entropy, after nothing is
 								 * perfect in the universe.
 								 */
-								dx += ((float) Math.random() - 0.5f) * 0.00001f;
-								dy += ((float) Math.random() - 0.5f) * 0.00001f;
-								dd = dx * dx + dy * dy;
-								// simulate the spring
-								final float d = (float) Math.sqrt(dd);
-								final float c = (0.5f * (sBallDiameter - d)) / d;
-								curr.mPosX -= dx * c;
-								curr.mPosY -= dy * c;
-								ball.mPosX += dx * c;
-								ball.mPosY += dy * c;
-								more = true;
+								 dx += ((float) Math.random() - 0.5f) * 0.00001f;
+								 dy += ((float) Math.random() - 0.5f) * 0.00001f;
+								 dd = dx * dx + dy * dy;
+								 // simulate the spring
+								 final float d = (float) Math.sqrt(dd);
+								 final float c = (0.5f * (sBallDiameter - d)) / d;
+								 curr.mPosX -= dx * c;
+								 curr.mPosY -= dy * c;
+								 ball.mPosX += dx * c;
+								 ball.mPosY += dy * c;
+								 more = true;
 							}
 						}
 						/*
@@ -687,8 +661,8 @@ public class AccelerometerPlayActivity extends Activity {
 
 			// rescale the ball so it's about 0.5 cm on screen
 			Bitmap ball = BitmapFactory.decodeResource(getResources(), R.drawable.ball);
-			final int dstWidth = (int) (sBallDiameter * mMetersToPixelsX + 0.5f);
-			final int dstHeight = (int) (sBallDiameter * mMetersToPixelsY + 0.5f);
+			final int dstWidth = (int) (sBallDiameter * mMetersToPixelsX + 0.4f);
+			final int dstHeight = (int) (sBallDiameter * mMetersToPixelsY + 0.45f);
 			mBitmap = Bitmap.createScaledBitmap(ball, dstWidth, dstHeight, true);
 
 
